@@ -29,6 +29,16 @@ type Context struct {
 
 	// 状态码
 	StatusCode int
+
+	// middleware
+
+	// 记录所有处理函数，
+	// 其内部的所有待处理函数会依次执行
+	handlers []HandlerFunc
+	// 记录已执行处理函数，
+	// 由于执行处理函数时可能会出现再次调用 c.Next() 方法，
+	// 所以需要将 index 设置在 Context 内
+	index int
 }
 
 // 根据 http.Reaponse 和 *http.Request 创建一个 Context
@@ -38,7 +48,25 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
+		index:  -1,
 	}
+}
+
+// 执行所有处理函数
+func (c *Context) Next() {
+	// 获取下一个待执行函数
+	c.index++
+	s := len(c.handlers)
+	for ; c.index < s; c.index++ {
+		// 执行
+		c.handlers[c.index](c)
+	}
+}
+
+// waiting...
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.handlers)
+	c.JSON(code, H{"message": err})
 }
 
 // 根据需要获得的参数名来获取对应的参数

@@ -118,9 +118,13 @@ func (r *router) handle(c *Context) {
 		c.Params = params
 		// 获取实际调用的 handler 的键 key
 		key := c.Method + "-" + n.pattern
-		// 运行 handler
-		r.handlers[key](c)
+		// 将要执行的处理函数添加
+		c.handlers = append(c.handlers, r.handlers[key])
 	} else {
-		c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
+		c.handlers = append(c.handlers, func(c *Context) {
+			c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
+		})
 	}
+	// 执行所有函数
+	c.Next()
 }

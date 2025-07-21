@@ -2,26 +2,37 @@ package main
 
 import (
 	"gee"
+	"log"
 	"net/http"
+	"time"
 )
 
+func onlyForV2() gee.HandlerFunc {
+	return func(c *gee.Context) {
+		// Start timer
+		t := time.Now()
+		// if a server error occurred
+		c.Fail(500, "Internal Server Error")
+		// Calculate resolution time
+		log.Printf("[%d] %s in %v for group v2", c.StatusCode, c.Req.RequestURI, time.Since(t))
+	}
+}
+
 func main() {
-	server := gee.New()
-	server.GET("/", func(c *gee.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello Gee<h1>")
-	})
-	server.GET("/hello", func(c *gee.Context) {
-		c.String(http.StatusOK, "hello\n")
-	})
-	server.GET("/login", func(c *gee.Context) {
-		c.JSON(http.StatusOK, gee.H{
-			"username": c.PostForm("username"),
-			"password": c.PostForm("password"),
-		})
+	r := gee.New()
+	r.Use(gee.Logger()) // global midlleware
+	r.GET("/", func(c *gee.Context) {
+		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
 	})
 
-	e := server.Run(":9999")
-	if e != nil {
-		panic(e)
+	v2 := r.Group("/v2")
+	v2.Use(onlyForV2()) // v2 group middleware
+	{
+		v2.GET("/hello/:name", func(c *gee.Context) {
+			// expect /hello/geektutu
+			c.String(http.StatusOK, "hello %s, you're at %s\n", c.Param("name"), c.Path)
+		})
 	}
+
+	r.Run(":9999")
 }
