@@ -21,9 +21,9 @@ func onlyForV2() gee.HandlerFunc {
 func main() {
 	r := gee.New()
 	r.Use(gee.Logger()) // global midlleware
-	r.GET("/", func(c *gee.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
-	})
+	// r.GET("/", func(c *gee.Context) {
+	// 	c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+	// })
 
 	v2 := r.Group("/v2")
 	v2.Use(onlyForV2()) // v2 group middleware

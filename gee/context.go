@@ -39,6 +39,10 @@ type Context struct {
 	// 由于执行处理函数时可能会出现再次调用 c.Next() 方法，
 	// 所以需要将 index 设置在 Context 内
 	index int
+
+	// engine pointer
+
+	engine *Engine
 }
 
 // 根据 http.Reaponse 和 *http.Request 创建一个 Context
@@ -124,8 +128,11 @@ func (c *Context) Data(code int, data []byte) {
 }
 
 // 设置响应体内容-HTML
-func (c *Context) HTML(code int, html string) {
+func (c *Context) HTML(code int, name string, data interface{}) {
 	c.SetHeader("Context-Type", "text/html")
 	c.Status(code)
-	c.Writer.Write([]byte(html))
+	err := c.engine.htmlTemplates.ExecuteTemplate(c.Writer, name, data)
+	if err != nil {
+		c.Fail(500, err.Error())
+	}
 }
